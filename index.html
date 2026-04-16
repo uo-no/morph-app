@@ -275,7 +275,7 @@ function decorate(word, entries) {
   if (morph.mood === 'O') moodClass = "optative";
   if (morph.mood === 'M') moodClass = "imperative";
   if (morph.mood === 'N') moodClass = "infinitive";
-  if (morph.mood === 'D') moodClass = "participle";
+  if (morph.mood === 'P') moodClass = "participle";
 
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass].filter(Boolean).join(" ");
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
