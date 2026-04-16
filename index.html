@@ -237,7 +237,7 @@ function parseMorph(code) {
 
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", M:"未完了", X:"不定" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
-const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", A:"命令法", N:"不定法", D:"分詞", G:"属格分詞" };
+const MOOD_LABEL  = { I:"直説法", A:"命令法" };
 
 function decorate(word, entries) {
   // 複数候補のinfo文字列を生成
