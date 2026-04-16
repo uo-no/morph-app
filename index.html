@@ -92,12 +92,16 @@ textarea:focus { outline: none; border-color: #888; }
   color: #1a1a18;
   padding: 0 2px;
 }
-.legend-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0;
-}
 
-/* 態・時制の装飾 */
+/* 時制の装飾 */
+.present { text-decoration: underline; }
+.imperfect { text-decoration: none; }
+.future { text-decoration: underline double; }
+.aorist { text-decoration: underline dotted; }
+.perfect { text-decoration: underline wavy; }
+.pluperfect { text-decoration: none; }
+
+/* 態の装飾 */
 .middle::after,
 .passive::after {
   content: "*";
@@ -106,18 +110,15 @@ textarea:focus { outline: none; border-color: #888; }
   vertical-align: super;
   opacity: 0.9;
 }
-  
-.present { text-decoration: underline; }
-.aorist { text-decoration: underline dotted; }
-.perfect { text-decoration: underline wavy; }
-.future { text-decoration: underline double; }
-.imperfect { text-decoration: none; }
-.pluperfect { text-decoration: none; }
-  
+
 /* 法による背景色 */
 .indicative { background-color: #fffacd; padding: 0 3px; }
-.imperative { background-color: #ffccd1; padding: 0 3px; }
-  
+.imperative { background-color: #fffacd; padding: 0 3px; }
+.subjunctive { background-color: transparent; }
+.optative { background-color: transparent; }
+.infinitive { background-color: transparent; }
+.participle { background-color: transparent; }
+
 /* ヒットした語にバッジ */
 .verb-hit {
   position: relative;
@@ -167,34 +168,31 @@ textarea:focus { outline: none; border-color: #888; }
     <p class="section-title">解析結果</p>
     <div class="output-box" id="output"></div>
 
-  <div class="legend">
-    <div class="legend-item">
-      <span class="legend-sample" style="text-decoration:underline">［動詞］</span>
-      <span>現在形</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-sample" style="text-decoration:underline dotted">［動詞］</span>
-      <span>アオリスト形</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-sample" style="text-decoration:underline wavy">［動詞］</span>
-      <span>完了形</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-sample" style="text-decoration:underline double">［動詞］</span>
-      <span>未来形</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-sample">［動詞］</span><span>*</span>
-      <span>中動・受動態</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-sample" style="background-color:#fffacd;padding:0 3px">［動詞］</span>
-      <span>直説法</span>
-    </div>      
-    <div class="legend-item">
-      <span class="legend-sample" style="background-color:#ffccd1;padding:0 3px">［動詞］</span>
-      <span>命令法</span> 
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline">［動詞］</span>
+        <span>現在形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline dotted">［動詞］</span>
+        <span>アオリスト形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline wavy">［動詞］</span>
+        <span>完了形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline double">［動詞］</span>
+        <span>未来形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample">［動詞］*</span>
+        <span>中動・受動態</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="background-color:#fffacd;padding:0 3px">［動詞］</span>
+        <span>直説法・命令法</span>
+      </div>      
     </div>
   </div>
 </div>
@@ -207,21 +205,21 @@ fetch("morphgnt.json")
   .then(data => {
     data.forEach(w => {
       if (w.pos && w.pos.startsWith("V-")) {
-            const key = normalizeGreek(w.word || "");
-      if (!key) return;
-      if (!morphMap.has(key)) {
-        morphMap.set(key, []);
+        const key = normalizeGreek(w.word || "");
+        if (!key) return;
+        if (!morphMap.has(key)) {
+          morphMap.set(key, []);
+        }
+        const arr = morphMap.get(key);
+        const isDup = arr.some(e => e.morph === w.morph);
+        if (!isDup) {
+          arr.push(w);
+        }
       }
-    const arr = morphMap.get(key);
-    const isDup = arr.some(e => e.morph === w.morph);
-      if (!isDup) {
-        arr.push(w);
-      }
-    }
-  });
+    });
     const total = [...morphMap.values()].reduce((s, a) => s + a.length, 0);
     document.getElementById("status").textContent =
-    "準備完了（動詞: " + total.toLocaleString() + "件）";
+      "準備完了（動詞: " + total.toLocaleString() + "件）";
   })
   .catch(() => {
     document.getElementById("status").textContent = "morphgnt.json が見つかりません";
@@ -240,8 +238,7 @@ function parseMorph(code) {
 
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
-const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞"
-};
+const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞" };
 
 function decorate(word, entries) {
   // 複数候補のinfo文字列を生成
@@ -291,9 +288,9 @@ function analyze() {
     const candidates = morphMap.get(key) || [];
     if (candidates.length > 0) {
       output += decorate(word, candidates) + " ";
-      } else {
-        output += `<span>${word}</span> `;
-      }
+    } else {
+      output += `<span>${word}</span> `;
+    }
   });
   document.getElementById("output").innerHTML = output.trim();
   document.getElementById("outputCard").style.display = "block";
