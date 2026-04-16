@@ -206,14 +206,19 @@ fetch("morphgnt.json")
   .then(res => res.json())
   .then(data => {
     data.forEach(w => {
-      if (w.pos === "V-") {
-        const key = normalizeGreek(w.normalized);
-        if (!morphMap.has(key)) morphMap.set(key, []);
-        const arr = morphMap.get(key);
-        const isDup = arr.some(e => e.morph === w.morph);
-        if (!isDup) arr.push(w);
+      if (w.pos && w.pos.startsWith("V-")) {
+            const key = normalizeGreek(w.word || "");
+      if (!key) return;
+      if (!morphMap.has(key)) {
+        morphMap.set(key, []);
       }
-    });
+    const arr = morphMap.get(key);
+    const isDup = arr.some(e => e.morph === w.morph);
+      if (!isDup) {
+        arr.push(w);
+      }
+    }
+  });
     const total = [...morphMap.values()].reduce((s, a) => s + a.length, 0);
     document.getElementById("status").textContent =
     "準備完了（動詞: " + total.toLocaleString() + "件）";
@@ -233,9 +238,10 @@ function parseMorph(code) {
   return { tense: code[1], voice: code[2], mood: code[3] };
 }
 
-const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", M:"未完了", X:"不明瞭" };
+const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
-const MOOD_LABEL  = { I:"直説法", A:"命令法" };
+const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞"
+};
 
 function decorate(word, entries) {
   // 複数候補のinfo文字列を生成
@@ -267,7 +273,7 @@ function decorate(word, entries) {
   if (morph.mood === 'I') moodClass = "indicative";
   if (morph.mood === 'S') moodClass = "subjunctive";
   if (morph.mood === 'O') moodClass = "optative";
-  if (morph.mood === 'A') moodClass = "imperative";
+  if (morph.mood === 'M') moodClass = "imperative";
   if (morph.mood === 'N') moodClass = "infinitive";
   if (morph.mood === 'D') moodClass = "participle";
 
@@ -282,12 +288,12 @@ function analyze() {
   let output = "";
   words.forEach(word => {
     const key = normalizeGreek(word);
-    const found = morphMap.get(key);
-    if (found) {
-      output += decorate(word, found) + " ";
-    } else {
-      output += `<span>${word}</span> `;
-    }
+    const candidates = morphMap.get(key) || [];
+    if (candidates.length > 0) {
+      output += decorate(word, candidates) + " ";
+      } else {
+        output += `<span>${word}</span> `;
+      }
   });
   document.getElementById("output").innerHTML = output.trim();
   document.getElementById("outputCard").style.display = "block";
