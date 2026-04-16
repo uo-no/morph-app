@@ -98,9 +98,21 @@ textarea:focus { outline: none; border-color: #888; }
 }
 
 /* 態・時制の装飾 */
-.middle, .passive { text-decoration: overline dashed black; }
-.middle::after, .passive::after { content: "*"; margin-left: 1px; }
+.middle, .passive {
+  text-decoration: overline dashed black;
+  position: relative;
+  display: inline-block;
+}
 
+.middle::after,
+.passive::after {
+  content: "*";
+  margin-left: 1px;
+  font-size: 0.75em;
+  vertical-align: super;
+  color: #1a1a18;
+}
+  
 .present { text-decoration: underline; }
 .aorist { text-decoration: underline dotted; }
 .perfect { text-decoration: underline wavy; }
@@ -174,7 +186,7 @@ textarea:focus { outline: none; border-color: #888; }
         <span>完了形</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample" style="border-top:1px dotted #000;padding-top:1px">語*</span>
+        <span class="legend-sample">語</span><span>*</span>
         <span>中動・受動態</span>
       </div>
       <div class="legend-item">
