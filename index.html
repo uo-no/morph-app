@@ -210,7 +210,9 @@ fetch("morphgnt.json")
       if (w.pos === "V-") {
         const key = normalizeGreek(w.normalized);
         if (!morphMap.has(key)) morphMap.set(key, []);
-        morphMap.get(key).push(w);
+        const arr = morphMap.get(key);
+        const isDup = arr.some(e => e.morph === w.morph);
+        if (!isDup) arr.push(w);
       }
     });
     const total = [...morphMap.values()].reduce((s, a) => s + a.length, 0);
