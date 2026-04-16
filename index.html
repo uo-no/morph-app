@@ -111,7 +111,9 @@ textarea:focus { outline: none; border-color: #888; }
 .aorist { text-decoration: underline dotted; }
 .perfect { text-decoration: underline wavy; }
 .future { text-decoration: underline double; }
-
+.imperfect { text-decoration: none; }
+.pluperfect { text-decoration: none; }
+  
 /* 法による背景色 */
 .indicative { background-color: #fffacd; padding: 0 3px; }
 .imperative { background-color: #ffccd1; padding: 0 3px; }
@@ -205,7 +207,7 @@ fetch("morphgnt.json")
   .then(res => res.json())
   .then(data => {
     data.forEach(w => {
-      if (w.pos === "V-") {
+      if (w.pos === "V") {
         morphMap.set(normalizeGreek(w.word), w);
       }
     });
@@ -236,8 +238,8 @@ function decorate(word, morph) {
   const tl = TENSE_LABEL[morph.tense] || morph.tense;
   const vl = VOICE_LABEL[morph.voice] || morph.voice;
   const ml = MOOD_LABEL[morph.mood]  || morph.mood;
-  const info = [tl, vl, ml].filter(Boolean).join(" · ");
-
+  const info = `${tl} / ${vl} / ${ml}`;
+  
   // 時制のクラス
   let tenseClass = "";
   if (morph.tense === 'P') tenseClass = "present";
@@ -270,7 +272,7 @@ function decorate(word, morph) {
 function analyze() {
   const input = document.getElementById("input").value.trim();
   if (!input) return;
-  const words = input.split(/\s+/);
+  const words = input.split(/[\s.,;:()]+/);
   let output = "";
   words.forEach(word => {
     const key = normalizeGreek(word);
