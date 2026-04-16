@@ -168,7 +168,7 @@ textarea:focus { outline: none; border-color: #888; }
         <span>完了形</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample" style="border-bottom:2px dotted #000;padding-bottom:1px">語</span>
+        <span class="legend-sample" style="border-top:1px dotted #000;padding-top:1px">語</span>
         <span>中動・受動態</span>
       </div>
       <div class="legend-item">
@@ -223,9 +223,9 @@ function decorate(word, morph) {
   const ml = MOOD_LABEL[morph.mood]  || morph.mood;
   const info = [tl, vl, ml].filter(Boolean).join(" · ");
 
-  if (morph.voice === 'M' || morph.voice === 'P') text = `・${text}・`;
-  if (morph.mood === 'I') text = `【${text}】`;
-  if (morph.mood === 'M') text = `<<${text}>>`;
+  if (morph.voice === 'M' || morph.voice === 'P') text = `${text}`;
+  if (morph.mood === 'I') text = `${text}`;
+  if (morph.mood === 'M') text = `${text}`;
 
   let cls = "";
   if (morph.tense === 'P') cls = "present";
