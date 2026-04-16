@@ -229,9 +229,9 @@ function parseMorph(code) {
   return { tense: code[1], voice: code[2], mood: code[3] };
 }
 
-const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了" };
+const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", M:"未完了", X:"不定" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
-const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定法", P:"分詞" };
+const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", A:"命令法", N:"不定法", D:"分詞", G:"属格分詞" };
 
 function decorate(word, morph) {
   let text = word;
