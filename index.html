@@ -98,11 +98,6 @@ textarea:focus { outline: none; border-color: #888; }
 }
 
 /* 態・時制の装飾 */
-.middle, .passive {
-  text-decoration: overline dashed black;
-  position: relative;
-}
-
 .middle::after,
 .passive::after {
   content: "*";
@@ -119,6 +114,7 @@ textarea:focus { outline: none; border-color: #888; }
 /* 法による背景色 */
 .indicative { background-color: #fffacd; padding: 0 3px; }
 .imperative { background-color: #fffacd; padding: 0 3px; }
+.future { background-color: #fffacd; padding: 0 3px; }
   
 /* ヒットした語にバッジ */
 .verb-hit {
@@ -171,23 +167,27 @@ textarea:focus { outline: none; border-color: #888; }
 
     <div class="legend">
       <div class="legend-item">
-        <span class="legend-sample" style="text-decoration:underline">動詞</span>
+        <span class="legend-sample" style="text-decoration:underline">［動詞］</span>
         <span>現在形</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample" style="text-decoration:underline dotted">動詞</span>
-        <span>アオリスト</span>
+        <span class="legend-sample" style="text-decoration:underline dotted">［動詞］</span>
+        <span>アオリスト形</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample" style="text-decoration:underline wavy">動詞</span>
+        <span class="legend-sample" style="text-decoration:underline wavy">［動詞］</span>
         <span>完了形</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample">動詞</span><span>*</span>
+        <span class="legend-sample" style="text-decoration:underline double">［動詞］</span>
+        <span>未来形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample">［動詞］</span><span>*</span>
         <span>中動・受動態</span>
       </div>
       <div class="legend-item">
-        <span class="legend-sample" style="background-color:#fffacd;padding:0 3px">動詞</span>
+        <span class="legend-sample" style="background-color:#fffacd;padding:0 3px">［動詞］</span>
         <span>直説法・命令法</span>
       </div>
     </div>
