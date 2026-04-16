@@ -208,11 +208,14 @@ fetch("morphgnt.json")
   .then(data => {
     data.forEach(w => {
       if (w.pos === "V-") {
-        morphMap.set(normalizeGreek(w.normalized), w);
+        const key = normalizeGreek(w.normalized);
+        if (!morphMap.has(key)) morphMap.set(key, []);
+        morphMap.get(key).push(w);
       }
     });
+    const total = [...morphMap.values()].reduce((s, a) => s + a.length, 0);
     document.getElementById("status").textContent =
-      "準備完了（動詞: " + morphMap.size.toLocaleString() + "件）";
+    "準備完了（動詞: " + total.toLocaleString() + "件）";
   })
   .catch(() => {
     document.getElementById("status").textContent = "morphgnt.json が見つかりません";
@@ -233,14 +236,19 @@ const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト"
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
 const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", A:"命令法", N:"不定法", D:"分詞", G:"属格分詞" };
 
-function decorate(word, morph) {
-  let text = word;
-  const tl = TENSE_LABEL[morph.tense] || morph.tense;
-  const vl = VOICE_LABEL[morph.voice] || morph.voice;
-  const ml = MOOD_LABEL[morph.mood]  || morph.mood;
-  const info = `${tl} / ${vl} / ${ml}`;
-  
-  // 時制のクラス
+function decorate(word, entries) {
+  // 複数候補のinfo文字列を生成
+  const info = entries.map(e => {
+    const morph = parseMorph(e.morph);
+    const tl = TENSE_LABEL[morph.tense] || morph.tense;
+    const vl = VOICE_LABEL[morph.voice] || morph.voice;
+    const ml = MOOD_LABEL[morph.mood]  || morph.mood;
+    return `${tl}/${vl}/${ml}`;
+  }).join(" · ");
+
+  // 最初のエントリのクラスで装飾
+  const morph = parseMorph(entries[0].morph);
+
   let tenseClass = "";
   if (morph.tense === 'P') tenseClass = "present";
   if (morph.tense === 'I') tenseClass = "imperfect";
@@ -249,26 +257,23 @@ function decorate(word, morph) {
   if (morph.tense === 'R') tenseClass = "perfect";
   if (morph.tense === 'L') tenseClass = "pluperfect";
 
-  // 態のクラス
   let voiceClass = "";
   if (morph.voice === 'A') voiceClass = "active";
-  if (morph.voice === 'M' || morph.voice === 'P') voiceClass = morph.voice === 'M' ? "middle" : "passive";
+  if (morph.voice === 'M') voiceClass = "middle";
+  if (morph.voice === 'P') voiceClass = "passive";
 
-  // 法のクラス
   let moodClass = "";
   if (morph.mood === 'I') moodClass = "indicative";
   if (morph.mood === 'S') moodClass = "subjunctive";
   if (morph.mood === 'O') moodClass = "optative";
-  if (morph.mood === 'M') moodClass = "imperative";
+  if (morph.mood === 'A') moodClass = "imperative";
   if (morph.mood === 'N') moodClass = "infinitive";
-  if (morph.mood === 'P') moodClass = "participle";
+  if (morph.mood === 'D') moodClass = "participle";
 
-  // クラスを組み合わせ
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass].filter(Boolean).join(" ");
-
-  return `<span class="${classes}" data-info="${info}">${text}</span>`;
+  return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
-
+  
 function analyze() {
   const input = document.getElementById("input").value.trim();
   if (!input) return;
@@ -278,8 +283,7 @@ function analyze() {
     const key = normalizeGreek(word);
     const found = morphMap.get(key);
     if (found) {
-      const morph = parseMorph(found.morph);
-      output += decorate(word, morph) + " ";
+      output += decorate(word, found) + " ";
     } else {
       output += `<span>${word}</span> `;
     }
