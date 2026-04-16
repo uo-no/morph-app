@@ -238,19 +238,28 @@ function decorate(word, morph) {
   const ml = MOOD_LABEL[morph.mood]  || morph.mood;
   const info = [tl, vl, ml].filter(Boolean).join(" · ");
 
-  // 態のクラス
+  // 時制のクラス
   let tenseClass = "";
   if (morph.tense === 'P') tenseClass = "present";
+  if (morph.tense === 'I') tenseClass = "imperfect";
+  if (morph.tense === 'F') tenseClass = "future";
   if (morph.tense === 'A') tenseClass = "aorist";
   if (morph.tense === 'R') tenseClass = "perfect";
+  if (morph.tense === 'L') tenseClass = "pluperfect";
 
+  // 態のクラス
   let voiceClass = "";
+  if (morph.voice === 'A') voiceClass = "active";
   if (morph.voice === 'M' || morph.voice === 'P') voiceClass = morph.voice === 'M' ? "middle" : "passive";
 
   // 法のクラス
   let moodClass = "";
   if (morph.mood === 'I') moodClass = "indicative";
+  if (morph.mood === 'S') moodClass = "subjunctive";
+  if (morph.mood === 'O') moodClass = "optative";
   if (morph.mood === 'M') moodClass = "imperative";
+  if (morph.mood === 'N') moodClass = "infinitive";
+  if (morph.mood === 'P') moodClass = "participle";
 
   // クラスを組み合わせ
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass].filter(Boolean).join(" ");
