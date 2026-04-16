@@ -208,7 +208,7 @@ fetch("morphgnt.json")
   .then(data => {
     data.forEach(w => {
       if (w.pos === "V-") {
-        morphMap.set(normalizeGreek(w.word), w);
+        morphMap.set(normalizeGreek(w.normalized), w);
       }
     });
     document.getElementById("status").textContent =
