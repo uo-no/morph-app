@@ -207,7 +207,7 @@ fetch("morphgnt.json")
   .then(res => res.json())
   .then(data => {
     data.forEach(w => {
-      if (w.pos === "V") {
+      if (w.pos === "V-") {
         morphMap.set(normalizeGreek(w.word), w);
       }
     });
