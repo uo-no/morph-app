@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greek Verb Analyzer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fff;
+  color: #1a1a18;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.app { max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+h1 { font-size: 16px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a18; }
+
+.card {
+  background: #fff;
+  border: 0.5px solid #e5e4de;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+label { font-size: 12px; color: #888; display: block; margin-bottom: 5px; }
+
+textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-size: 15px;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 0.5px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a18;
+  line-height: 1.8;
+}
+textarea:focus { outline: none; border-color: #888; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+
+.btn {
+  padding: 7px 16px;
+  font-size: 13px;
+  border: 0.5px solid #ccc;
+  border-radius: 8px;
+  background: transparent;
+  color: #1a1a18;
+  cursor: pointer;
+}
+.btn:hover { background: #f4f3ee; }
+.btn.primary { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.btn.primary:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#status { font-size: 12px; color: #888; margin-left: auto; }
+
+/* 出力エリア */
+.output-box {
+  background: #f9f9f8;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-size: 18px;
+  line-height: 2.4;
+  color: #1a1a18;
+  min-height: 60px;
+  border: 0.5px solid #e5e4de;
+  word-break: break-word;
+}
+
+/* 凡例 */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 1rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
+}
+.legend-sample {
+  font-size: 14px;
+  color: #1a1a18;
+  padding: 0 2px;
+}
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 態・時制の装飾（オリジナルのまま） */
+.middle, .passive { border-bottom: 2px dotted #000; }
+.present { text-decoration: underline; }
+.aorist { text-decoration: underline dotted; }
+.perfect { text-decoration: underline wavy; }
+
+/* ヒットした語にバッジ */
+.verb-hit {
+  position: relative;
+  cursor: help;
+}
+.verb-hit::after {
+  content: attr(data-info);
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a18;
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+.verb-hit:hover::after { display: block; }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>コイネー・ギリシャ語 動詞解析</h1>
+
+  <div class="card">
+    <label>テキスト入力</label>
+    <textarea id="input" rows="3" placeholder="例：ἐκλήθητε ἐβεβαιώθη"></textarea>
+    <div class="btn-row">
+      <button class="btn primary" onclick="analyze()">解析</button>
+      <button class="btn" onclick="clearAll()">クリア</button>
+      <span id="status">データ読み込み中...</span>
+    </div>
+  </div>
+
+  <div class="card" id="outputCard" style="display:none;">
+    <p class="section-title">解析結果</p>
+    <div class="output-box" id="output"></div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline">語</span>
+        <span>現在形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline dotted">語</span>
+        <span>アオリスト</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="text-decoration:underline wavy">語</span>
+        <span>完了形</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample" style="border-bottom:2px dotted #000;padding-bottom:1px">語</span>
+        <span>中動・受動態</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample">【語】</span>
+        <span>直説法</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-sample">&lt;&lt;語&gt;&gt;</span>
+        <span>命令法</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let morphMap = new Map();
+
+fetch("morphgnt.json")
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(w => {
+      if (w.pos === "V-") {
+        morphMap.set(normalizeGreek(w.word), w);
+      }
+    });
+    document.getElementById("status").textContent =
+      "準備完了（動詞: " + morphMap.size.toLocaleString() + "件）";
+  })
+  .catch(() => {
+    document.getElementById("status").textContent = "morphgnt.json が見つかりません";
+  });
+
+function normalizeGreek(text) {
+  return text.toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ς/g, "σ");
+}
+
+function parseMorph(code) {
+  return { tense: code[1], voice: code[2], mood: code[3] };
+}
+
+const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了" };
+const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
+const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定法", P:"分詞" };
+
+function decorate(word, morph) {
+  let text = word;
+  const tl = TENSE_LABEL[morph.tense] || morph.tense;
+  const vl = VOICE_LABEL[morph.voice] || morph.voice;
+  const ml = MOOD_LABEL[morph.mood]  || morph.mood;
+  const info = [tl, vl, ml].filter(Boolean).join(" · ");
+
+  if (morph.voice === 'M' || morph.voice === 'P') text = `・${text}・`;
+  if (morph.mood === 'I') text = `【${text}】`;
+  if (morph.mood === 'M') text = `<<${text}>>`;
+
+  let cls = "";
+  if (morph.tense === 'P') cls = "present";
+  if (morph.tense === 'A') cls = "aorist";
+  if (morph.tense === 'R') cls = "perfect";
+
+  return `<span class="verb-hit ${cls}" data-info="${info}">${text}</span>`;
+}
+
+function analyze() {
+  const input = document.getElementById("input").value.trim();
+  if (!input) return;
+  const words = input.split(/\s+/);
+  let output = "";
+  words.forEach(word => {
+    const key = normalizeGreek(word);
+    const found = morphMap.get(key);
+    if (found) {
+      const morph = parseMorph(found.morph);
+      output += decorate(word, morph) + " ";
+    } else {
+      output += `<span>${word}</span> `;
+    }
+  });
+  document.getElementById("output").innerHTML = output.trim();
+  document.getElementById("outputCard").style.display = "block";
+}
+
+function clearAll() {
+  document.getElementById("input").value = "";
+  document.getElementById("outputCard").style.display = "none";
+}
+</script>
+</body>
+</html>
