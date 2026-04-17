@@ -279,39 +279,65 @@ const GENDER_LABEL = { M:"男性", F:"女性", N:"中性" };
   
 function decorate(word, entries) {
 
-  console.log("WORD:", word);
-  console.log("ENTRIES:", entries);
-  console.log("MORPHS:", entries.map(e => e.morph));
+  if (!entries || entries.length === 0) {
+    return `<span>${word}</span>`;
+  }
 
-  const info = entries.map(e => {
+  // ★ 重複排除（順序維持）
+  const seen = new Set();
+  const unique = [];
+
+  entries.forEach(e => {
     const m = parseMorph(e.morph);
 
-    const parts = [
+    const label = [
       TENSE_LABEL[m.tense],
       VOICE_LABEL[m.voice],
       MOOD_LABEL[m.mood],
+      PERSON_LABEL[m.person],
+      NUMBER_LABEL[m.number],
+      CASE_LABEL[m.case],
+      GENDER_LABEL[m.gender]
+    ].filter(Boolean).join("/");
 
-      m.type === "finite" ? PERSON_LABEL[m.person] : null,
-      m.type === "finite" ? NUMBER_LABEL[m.number] : null,
+    if (!seen.has(label)) {
+      seen.add(label);
+      unique.push({ label, morph: m });
+    }
+  });
 
-      m.type === "participle" ? CASE_LABEL[m.case] : null,
-      m.type === "participle" ? NUMBER_LABEL[m.number] : null,
-      m.type === "participle" ? GENDER_LABEL[m.gender] : null
-    ];
+  // ★ 表示用
+  const info = unique.map(u => u.label).join(" | ");
 
-    return parts.filter(Boolean).join("/");
-  }).join(" ｜ ");
+  // ★ 優先順位（ここがミソ）
+  const priority = ["indicative", "imperative", "participle", "infinitive"];
+  let main = unique[0];
 
-  // ★ 表示スタイルは「最も代表的なもの」に限定
-  // → 命令を優先（なければ最初）
-  let main = entries.find(e => parseMorph(e.morph).mood === "M") || entries[0];
-  const m = parseMorph(main.morph);
+  for (const p of priority) {
+    const found = unique.find(u => {
+      const mood = MOOD_LABEL[u.morph.mood];
+      if (p === "indicative" && mood === "直説法") return true;
+      if (p === "imperative" && mood === "命令法") return true;
+      if (p === "participle" && mood === "分詞") return true;
+      if (p === "infinitive" && mood === "不定詞") return true;
+      return false;
+    });
+    if (found) {
+      main = found;
+      break;
+    }
+  }
 
+  const m = main.morph;
+
+  // ★ クラス決定
   let tenseClass = "";
   if (m.tense === 'P') tenseClass = "present";
+  if (m.tense === 'I') tenseClass = "imperfect";
+  if (m.tense === 'F') tenseClass = "future";
   if (m.tense === 'A') tenseClass = "aorist";
   if (m.tense === 'R') tenseClass = "perfect";
-  if (m.tense === 'F') tenseClass = "future";
+  if (m.tense === 'L') tenseClass = "pluperfect";
 
   let voiceClass = "";
   if (m.voice === 'M') voiceClass = "middle";
@@ -319,12 +345,15 @@ function decorate(word, entries) {
 
   let moodClass = "";
   if (m.mood === 'I') moodClass = "indicative";
-  if (m.mood === 'M') moodClass = "imperative";
   if (m.mood === 'S') moodClass = "subjunctive";
+  if (m.mood === 'O') moodClass = "optative";
+  if (m.mood === 'M') moodClass = "imperative";
+  if (m.mood === 'N') moodClass = "infinitive";
   if (m.mood === 'P') moodClass = "participle";
 
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass]
-    .filter(Boolean).join(" ");
+    .filter(Boolean)
+    .join(" ");
 
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
