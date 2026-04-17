@@ -278,6 +278,7 @@ const CASE_LABEL = { N:"主格", G:"属格", D:"与格", A:"対格", V:"呼格" 
 const GENDER_LABEL = { M:"男性", F:"女性", N:"中性" };
   
 function decorate(word, entries) {
+
   const info = entries.map(e => {
     const m = parseMorph(e.morph);
 
@@ -285,29 +286,28 @@ function decorate(word, entries) {
       TENSE_LABEL[m.tense],
       VOICE_LABEL[m.voice],
       MOOD_LABEL[m.mood],
-    
-      // 有限動詞のみ
+
       m.type === "finite" ? PERSON_LABEL[m.person] : null,
       m.type === "finite" ? NUMBER_LABEL[m.number] : null,
-    
-      // 分詞のみ
+
       m.type === "participle" ? CASE_LABEL[m.case] : null,
       m.type === "participle" ? NUMBER_LABEL[m.number] : null,
       m.type === "participle" ? GENDER_LABEL[m.gender] : null
     ];
 
     return parts.filter(Boolean).join("/");
-  }).join(" · ");
+  }).join(" ｜ ");
 
-  const m = parseMorph(entries[0].morph);
+  // ★ 表示スタイルは「最も代表的なもの」に限定
+  // → 命令を優先（なければ最初）
+  let main = entries.find(e => parseMorph(e.morph).mood === "M") || entries[0];
+  const m = parseMorph(main.morph);
 
   let tenseClass = "";
   if (m.tense === 'P') tenseClass = "present";
-  if (m.tense === 'I') tenseClass = "imperfect";
-  if (m.tense === 'F') tenseClass = "future";
   if (m.tense === 'A') tenseClass = "aorist";
   if (m.tense === 'R') tenseClass = "perfect";
-  if (m.tense === 'L') tenseClass = "pluperfect";
+  if (m.tense === 'F') tenseClass = "future";
 
   let voiceClass = "";
   if (m.voice === 'M') voiceClass = "middle";
@@ -315,13 +315,12 @@ function decorate(word, entries) {
 
   let moodClass = "";
   if (m.mood === 'I') moodClass = "indicative";
-  if (m.mood === 'S') moodClass = "subjunctive";
-  if (m.mood === 'O') moodClass = "optative";
   if (m.mood === 'M') moodClass = "imperative";
-  if (m.mood === 'N') moodClass = "infinitive";
+  if (m.mood === 'S') moodClass = "subjunctive";
   if (m.mood === 'P') moodClass = "participle";
 
-  const classes = ["verb-hit", tenseClass, voiceClass, moodClass].filter(Boolean).join(" ");
+  const classes = ["verb-hit", tenseClass, voiceClass, moodClass]
+    .filter(Boolean).join(" ");
 
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
