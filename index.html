@@ -192,61 +192,69 @@ textarea:focus { outline: none; border-color: #888; }
 <script>
 let morphMap = new Map();
 
-// ── morphgnt.json の生の値 → 正規化ラベルへの変換テーブル ──────────────
+// ── MorphGNT raw文字列のパース ────────────────────────────────────────────
+// rawは8文字: [person][tense][voice][mood][case][number][gender][degree]
+// 例: "3PMD-S--" → person=3, tense=P, voice=M, mood=D, number=S
 
-// tense: 1文字コード（"P","I","F","A","X","Y"）と英語ラベルの両方に対応
-const TENSE_NORM = {
-  "P": "present",    "present":    "present",
-  "I": "imperfect",  "imperfect":  "imperfect",
-  "F": "future",     "future":     "future",
-  "A": "aorist",     "aorist":     "aorist",
-  "X": "perfect",    "perfect":    "perfect",
-  "Y": "pluperfect", "pluperfect": "pluperfect"
-};
+const RAW_TENSE = { P:"present", I:"imperfect", F:"future", A:"aorist", X:"perfect", Y:"pluperfect" };
+const RAW_VOICE = { A:"active", M:"middle", P:"passive", D:"middle" };
+const RAW_MOOD  = { I:"indicative", D:"imperative", S:"subjunctive", O:"optative", N:"infinitive", P:"participle" };
+const RAW_NUM   = { S:"singular", P:"plural", D:"dual" };
+const RAW_PERS  = { "1":"1", "2":"2", "3":"3" };
 
-// voice: 1文字コード・英語ラベル・複合語（"middle deponent" 等）に対応
-const VOICE_NORM = {
-  "A": "active",   "active":           "active",
-  "M": "middle",   "middle":           "middle",
-                   "middle deponent":  "middle",
-  "P": "passive",  "passive":          "passive",
-                   "passive deponent": "passive",
-  "D": "middle",   "deponent":         "middle",
-                   "middle or passive":"passive",
-                   "middle/passive":   "passive"
-};
-
-// mood: 1文字コード（"I","D","S","O","N","P"）と英語ラベルの両方に対応
-const MOOD_NORM = {
-  "I": "indicative",  "indicative":  "indicative",
-  "D": "imperative",  "imperative":  "imperative",
-  "S": "subjunctive", "subjunctive": "subjunctive",
-  "O": "optative",    "optative":    "optative",
-  "N": "infinitive",  "infinitive":  "infinitive",
-  "P": "participle",  "participle":  "participle"
-};
-
-// number: 1文字コード（"S","P","D"）と英語ラベルの両方に対応
-const NUMBER_NORM = {
-  "S": "singular", "singular": "singular",
-  "P": "plural",   "plural":   "plural",
-  "D": "dual",     "dual":     "dual"
-};
-
-// person: "1st"/"2nd"/"3rd" と "1"/"2"/"3" の両方に対応
-const PERSON_NORM = {
-  "1": "1", "1st": "1",
-  "2": "2", "2nd": "2",
-  "3": "3", "3rd": "3"
-};
-
-function normalizeMorph(raw) {
+function parseRaw(raw) {
+  if (!raw || raw.length < 8) return null;
   return {
-    tense:  TENSE_NORM[raw.tense]   || null,
-    voice:  VOICE_NORM[raw.voice]   || null,
-    mood:   MOOD_NORM[raw.mood]     || null,
-    number: NUMBER_NORM[raw.number] || null,
-    person: PERSON_NORM[raw.person] || null
+    person: RAW_PERS[raw[0]]  || null,
+    tense:  RAW_TENSE[raw[1]] || null,
+    voice:  RAW_VOICE[raw[2]] || null,
+    mood:   RAW_MOOD[raw[3]]  || null,
+    number: RAW_NUM[raw[5]]   || null
+  };
+}
+
+// ── フィールド値からのフォールバック変換（rawが不完全な場合用）────────────
+
+const FIELD_TENSE = {
+  "P":"present",    "present":"present",
+  "I":"imperfect",  "imperfect":"imperfect",
+  "F":"future",     "future":"future",
+  "A":"aorist",     "aorist":"aorist",
+  "X":"perfect",    "perfect":"perfect",
+  "Y":"pluperfect", "pluperfect":"pluperfect"
+};
+const FIELD_VOICE = {
+  "A":"active",  "active":"active",
+  "M":"middle",  "middle":"middle",  "middle deponent":"middle",
+  "P":"passive", "passive":"passive","passive deponent":"passive",
+  "D":"middle",  "deponent":"middle","middle or passive":"passive","middle/passive":"passive"
+};
+const FIELD_MOOD = {
+  "I":"indicative",  "indicative":"indicative",
+  "D":"imperative",  "imperative":"imperative",
+  "S":"subjunctive", "subjunctive":"subjunctive",
+  "O":"optative",    "optative":"optative",
+  "N":"infinitive",  "infinitive":"infinitive",
+  "P":"participle",  "participle":"participle"
+};
+const FIELD_NUM = {
+  "S":"singular", "singular":"singular",
+  "P":"plural",   "plural":"plural",
+  "D":"dual",     "dual":"dual"
+};
+const FIELD_PERS = {
+  "1":"1","1st":"1","2":"2","2nd":"2","3":"3","3rd":"3"
+};
+
+// ── rawを優先し、足りない部分をフィールド値で補完 ─────────────────────────
+function normalizeMorph(morph) {
+  const raw = parseRaw(morph.raw);
+  return {
+    tense:  (raw && raw.tense)  || FIELD_TENSE[morph.tense]  || null,
+    voice:  (raw && raw.voice)  || FIELD_VOICE[morph.voice]  || null,
+    mood:   (raw && raw.mood)   || FIELD_MOOD[morph.mood]    || null,
+    number: (raw && raw.number) || FIELD_NUM[morph.number]   || null,
+    person: (raw && raw.person) || FIELD_PERS[morph.person]  || null
   };
 }
 
@@ -255,10 +263,10 @@ function normalizeGreek(text) {
   return text
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")          // アクセント記号・気息記号
-    .replace(/[⸂⸃\u2018\u2019]/g, "")        // 特殊引用符
-    .replace(/[.,;:!?\u0387\u00b7·]/g, "")    // 句読点（語末ピリオドなど）
-    .replace(/ς/g, "σ");                       // 語末シグマを通常シグマに統一
+    .replace(/[\u0300-\u036f]/g, "")           // アクセント・気息記号
+    .replace(/[⸂⸃\u2018\u2019\u2014]/g, "")   // 特殊引用符・ダッシュ
+    .replace(/[.,;:!?\u0387\u00b7·]/g, "")     // 句読点（語末ピリオドなど）
+    .replace(/ς/g, "σ");                        // 語末シグマを統一
 }
 
 // ── データ読み込み ────────────────────────────────────────────────────────
@@ -266,24 +274,19 @@ fetch("morphgnt.json")
   .then(res => res.json())
   .then(data => {
     console.log("loaded words:", data.length);
-    console.log("sample:", data[0]);
 
     data.forEach(w => {
-      // 動詞のみ処理
       if (w.pos !== "V-") return;
 
-      // word フィールドを正規化（句読点・アクセントを除去してキーにする）
       const key = normalizeGreek(w.word || "");
       if (!key) return;
 
-      // morph を統一フォーマットに変換
       const morph = normalizeMorph(w.morph || {});
       const entry = { morph, lemma: w.lemma, word: w.word };
 
       if (!morphMap.has(key)) morphMap.set(key, []);
       const arr = morphMap.get(key);
 
-      // 同一形態素の重複を排除
       const isDup = arr.some(e =>
         e.morph.tense  === morph.tense  &&
         e.morph.voice  === morph.voice  &&
@@ -330,7 +333,6 @@ function getMorphLabel(morph) {
 function decorate(word, entries) {
   if (!entries || entries.length === 0) return `<span>${word}</span>`;
 
-  // ラベル重複排除
   const seen = new Set();
   const unique = [];
   entries.forEach(e => {
@@ -364,7 +366,6 @@ function analyze() {
   const input = document.getElementById("input").value.trim();
   if (!input) return;
 
-  // 空白・改行で分割（語内の句読点はそのまま残して表示し、キー生成時に除去する）
   const tokens = input.split(/[\s\u00a0]+/).filter(w => w);
   let output = "";
 
