@@ -235,8 +235,8 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // 動詞（有限動詞）
-  if (/[0-9]/.test(code)) {
+  // 有限動詞（5文字 + 数字あり）
+  if (code.length >= 5 && /[123]/.test(code[3])) {
     return {
       tense: code[0],
       voice: code[1],
@@ -246,19 +246,19 @@ function parseMorph(code) {
     };
   }
 
-  // 分詞
-  if (code.length === 6) {
+  // 分詞（6文字・人称なし）
+  if (code.length === 6 && code[2] === "P") {
     return {
       tense: code[0],
       voice: code[1],
-      mood: code[2], // ← P（分詞）
+      mood: code[2],
       case: code[3],
       number: code[4],
       gender: code[5]
     };
   }
 
-  // フォールバック
+  // 不定詞など
   return {
     tense: code[0],
     voice: code[1],
