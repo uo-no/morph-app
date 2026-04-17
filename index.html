@@ -233,8 +233,24 @@ function normalizeGreek(text) {
 }
 
 function parseMorph(code) {
-  if (!code || code.length < 3) return {};
-  return { tense: code[0], voice: code[1], mood: code[2] };
+  if (!code) return {};
+
+  // ① ハイフンあり（例: PMM-2P）
+  if (code.includes("-")) {
+    const [main] = code.split("-");
+    return {
+      tense: main[0],
+      voice: main[1],
+      mood: main[2]
+    };
+  }
+
+  // ② 通常形式（PAPDSF）
+  return {
+    tense: code[0],
+    voice: code[1],
+    mood: code[2]
+  };
 }
 
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
