@@ -233,7 +233,8 @@ function normalizeGreek(text) {
 }
 
 function parseMorph(code) {
-  return { tense: code[1], voice: code[2], mood: code[3] };
+  if (!code || code.length < 3) return {};
+  return { tense: code[0], voice: code[1], mood: code[2] };
 }
 
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
