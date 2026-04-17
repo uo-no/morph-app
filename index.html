@@ -235,19 +235,8 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // 有限動詞（5文字 + 数字あり）
-  if (code.length >= 5 && /[123]/.test(code[3])) {
-    return {
-      tense: code[0],
-      voice: code[1],
-      mood: code[2],
-      person: code[3],
-      number: code[4]
-    };
-  }
-
-  // 分詞（6文字・人称なし）
-  if (code.length === 6 && code[2] === "P") {
+  // 分詞（3文字目がP）
+  if (code[2] === "P") {
     return {
       tense: code[0],
       voice: code[1],
@@ -258,6 +247,17 @@ function parseMorph(code) {
     };
   }
 
+  // 有限動詞（人称あり）
+  if (/[123]/.test(code[3])) {
+    return {
+      tense: code[0],
+      voice: code[1],
+      mood: code[2],
+      person: code[3],
+      number: code[4]
+    };
+  }
+
   // 不定詞など
   return {
     tense: code[0],
@@ -265,7 +265,7 @@ function parseMorph(code) {
     mood: code[2]
   };
 }
-
+  
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
 const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞" };
