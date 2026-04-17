@@ -235,10 +235,10 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // ★ 分詞（確実判定）
-  // 例：PAPDSF
+  // ★ 分詞（100%確定）
   if (code.length === 6 && code[2] === "P") {
     return {
+      type: "participle",
       tense: code[0],
       voice: code[1],
       mood: code[2],
@@ -248,10 +248,10 @@ function parseMorph(code) {
     };
   }
 
-  // ★ 有限動詞（4文字目が数字）
-  // 例：PAI2P
-  if (code.length >= 5 && /^[123]$/.test(code[3])) {
+  // ★ 有限動詞（100%確定）
+  if (code.length === 5 && "123".includes(code[3])) {
     return {
+      type: "finite",
       tense: code[0],
       voice: code[1],
       mood: code[2],
@@ -260,8 +260,9 @@ function parseMorph(code) {
     };
   }
 
-  // ★ 不定詞など（PINなど）
+  // ★ 不定詞など
   return {
+    type: "other",
     tense: code[0],
     voice: code[1],
     mood: code[2]
@@ -285,14 +286,14 @@ function decorate(word, entries) {
       VOICE_LABEL[m.voice],
       MOOD_LABEL[m.mood],
     
-      // ★ 有限動詞だけ人称を出す
-      m.person ? PERSON_LABEL[m.person] : null,
+      // 有限動詞のみ
+      m.type === "finite" ? PERSON_LABEL[m.person] : null,
+      m.type === "finite" ? NUMBER_LABEL[m.number] : null,
     
-      NUMBER_LABEL[m.number],
-    
-      // ★ 分詞だけ格・性を出す
-      m.case ? CASE_LABEL[m.case] : null,
-      m.gender ? GENDER_LABEL[m.gender] : null
+      // 分詞のみ
+      m.type === "participle" ? CASE_LABEL[m.case] : null,
+      m.type === "participle" ? NUMBER_LABEL[m.number] : null,
+      m.type === "participle" ? GENDER_LABEL[m.gender] : null
     ];
 
     return parts.filter(Boolean).join("/");
