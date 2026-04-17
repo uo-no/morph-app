@@ -282,7 +282,8 @@ function decorate(word, entries) {
     const pl = PERSON_LABEL[morph.person] || "";
     const nl = NUMBER_LABEL[morph.number] || "";
     return [tl, vl, ml, pl, nl].filter(Boolean).join("/");
-
+  }).join(" · ");
+  
   // 最初のエントリのクラスで装飾
   const morph = parseMorph(entries[0].morph);
 
