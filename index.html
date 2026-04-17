@@ -235,17 +235,30 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // ① ハイフンあり（例: PMM-2P）
-  if (code.includes("-")) {
-    const [main] = code.split("-");
+  // 動詞（有限動詞）
+  if (code.length === 6 && /[0-9]/.test(code[4])) {
     return {
-      tense: main[0],
-      voice: main[1],
-      mood: main[2]
+      tense: code[0],
+      voice: code[1],
+      mood: code[2],
+      person: code[3],
+      number: code[4]
     };
   }
 
-  // ② 通常形式（PAPDSF）
+  // 分詞
+  if (code.length === 6) {
+    return {
+      tense: code[0],
+      voice: code[1],
+      mood: code[2], // ← P（分詞）
+      case: code[3],
+      number: code[4],
+      gender: code[5]
+    };
+  }
+
+  // フォールバック
   return {
     tense: code[0],
     voice: code[1],
@@ -256,7 +269,9 @@ function parseMorph(code) {
 const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
 const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
 const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞" };
-
+const PERSON_LABEL = { "1":"1人称", "2":"2人称", "3":"3人称" };
+const NUMBER_LABEL = { S:"単数", P:"複数" };
+  
 function decorate(word, entries) {
   // 複数候補のinfo文字列を生成
   const info = entries.map(e => {
