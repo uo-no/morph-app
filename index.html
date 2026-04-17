@@ -235,8 +235,8 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // 分詞（3文字目がP）
-  if (code[2] === "P") {
+  // ★ 分詞を最優先
+  if (code.length === 6 && code[2] === "P") {
     return {
       tense: code[0],
       voice: code[1],
@@ -247,8 +247,8 @@ function parseMorph(code) {
     };
   }
 
-  // 有限動詞（人称あり）
-  if (/[123]/.test(code[3])) {
+  // ★ 有限動詞（人称あり）
+  if (code.length >= 5 && /[123]/.test(code[3])) {
     return {
       tense: code[0],
       voice: code[1],
@@ -271,44 +271,50 @@ const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
 const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞" };
 const PERSON_LABEL = { "1":"1人称", "2":"2人称", "3":"3人称" };
 const NUMBER_LABEL = { S:"単数", P:"複数" };
+const CASE_LABEL = { N:"主格", G:"属格", D:"与格", A:"対格", V:"呼格" };
+const GENDER_LABEL = { M:"男性", F:"女性", N:"中性" };
   
 function decorate(word, entries) {
-  // 複数候補のinfo文字列を生成
   const info = entries.map(e => {
-    const morph = parseMorph(e.morph);
-    const tl = TENSE_LABEL[morph.tense] || morph.tense;
-    const vl = VOICE_LABEL[morph.voice] || morph.voice;
-    const ml = MOOD_LABEL[morph.mood]  || morph.mood;
-    const pl = PERSON_LABEL[morph.person] || "";
-    const nl = NUMBER_LABEL[morph.number] || "";
-    return [tl, vl, ml, pl, nl].filter(Boolean).join("/");
+    const m = parseMorph(e.morph);
+
+    const parts = [
+      TENSE_LABEL[m.tense],
+      VOICE_LABEL[m.voice],
+      MOOD_LABEL[m.mood],
+      PERSON_LABEL[m.person],
+      NUMBER_LABEL[m.number],
+      CASE_LABEL[m.case],
+      GENDER_LABEL[m.gender]
+    ];
+
+    return parts.filter(Boolean).join("/");
   }).join(" · ");
-  
-  // 最初のエントリのクラスで装飾
-  const morph = parseMorph(entries[0].morph);
+
+  const m = parseMorph(entries[0].morph);
 
   let tenseClass = "";
-  if (morph.tense === 'P') tenseClass = "present";
-  if (morph.tense === 'I') tenseClass = "imperfect";
-  if (morph.tense === 'F') tenseClass = "future";
-  if (morph.tense === 'A') tenseClass = "aorist";
-  if (morph.tense === 'R') tenseClass = "perfect";
-  if (morph.tense === 'L') tenseClass = "pluperfect";
+  if (m.tense === 'P') tenseClass = "present";
+  if (m.tense === 'I') tenseClass = "imperfect";
+  if (m.tense === 'F') tenseClass = "future";
+  if (m.tense === 'A') tenseClass = "aorist";
+  if (m.tense === 'R') tenseClass = "perfect";
+  if (m.tense === 'L') tenseClass = "pluperfect";
 
   let voiceClass = "";
-  if (morph.voice === 'A') voiceClass = "active";
-  if (morph.voice === 'M') voiceClass = "middle";
-  if (morph.voice === 'P') voiceClass = "passive";
+  if (m.voice === 'M') voiceClass = "middle";
+  if (m.voice === 'P') voiceClass = "passive";
 
   let moodClass = "";
-  if (morph.mood === 'I') moodClass = "indicative";
-  if (morph.mood === 'S') moodClass = "subjunctive";
-  if (morph.mood === 'O') moodClass = "optative";
-  if (morph.mood === 'M') moodClass = "imperative";
-  if (morph.mood === 'N') moodClass = "infinitive";
-  if (morph.mood === 'P') moodClass = "participle";
+  if (m.mood === 'I') moodClass = "indicative";
+  if (m.mood === 'S') moodClass = "subjunctive";
+  if (m.mood === 'O') moodClass = "optative";
+  if (m.mood === 'M') moodClass = "imperative";
+  if (m.mood === 'N') moodClass = "infinitive";
+  if (m.mood === 'P') moodClass = "participle";
 
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass].filter(Boolean).join(" ");
+
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
   
