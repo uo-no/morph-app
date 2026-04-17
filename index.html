@@ -204,14 +204,21 @@ fetch("morphgnt.json")
   .then(res => res.json())
   .then(data => {
     data.forEach(w => {
-      if (w.pos && w.pos.startsWith("V-")) {
+      // 動詞判定（pos === "V-"）
+      if (w.pos === "V-") {
         const key = normalizeGreek(w.word || "");
         if (!key) return;
         if (!morphMap.has(key)) {
           morphMap.set(key, []);
         }
         const arr = morphMap.get(key);
-        const isDup = arr.some(e => e.morph === w.morph);
+        const isDup = arr.some(e => 
+          e.morph.tense === w.morph.tense &&
+          e.morph.voice === w.morph.voice &&
+          e.morph.mood === w.morph.mood &&
+          e.morph.person === w.morph.person &&
+          e.morph.number === w.morph.number
+        );
         if (!isDup) {
           arr.push(w);
         }
@@ -221,7 +228,8 @@ fetch("morphgnt.json")
     document.getElementById("status").textContent =
       "準備完了（動詞: " + total.toLocaleString() + "件）";
   })
-  .catch(() => {
+  .catch(err => {
+    console.error(err);
     document.getElementById("status").textContent = "morphgnt.json が見つかりません";
   });
 
@@ -229,127 +237,137 @@ function normalizeGreek(text) {
   return text.toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ς/g, "σ");
+    .replace(/[\u0370-\u037f]/g, c => {
+      const map = { 'ς': 'σ', 'ʹ': '' };
+      return map[c] || c;
+    })
+    .replace(/^[⸂⸃]/, "");  // ⸂⸃ を削除
 }
 
-function parseMorph(code) {
-  if (!code) return {};
+const TENSE_LABEL = {
+  "present": "現在",
+  "imperfect": "未完了",
+  "future": "未来",
+  "aorist": "アオリスト",
+  "perfect": "完了",
+  "pluperfect": "過去完了"
+};
 
-  // ★ 分詞（100%確定）
-  if (code.length === 6 && code[2] === "P") {
-    return {
-      type: "participle",
-      tense: code[0],
-      voice: code[1],
-      mood: code[2],
-      case: code[3],
-      number: code[4],
-      gender: code[5]
-    };
+const VOICE_LABEL = {
+  "active": "能動",
+  "middle": "中動",
+  "passive": "受動"
+};
+
+const MOOD_LABEL = {
+  "indicative": "直説法",
+  "subjunctive": "接続法",
+  "optative": "希求法",
+  "imperative": "命令法",
+  "infinitive": "不定詞",
+  "participle": "分詞"
+};
+
+const PERSON_LABEL = {
+  "1": "1人称",
+  "2": "2人称",
+  "3": "3人称"
+};
+
+const NUMBER_LABEL = {
+  "singular": "単数",
+  "S": "単数",
+  "plural": "複数",
+  "P": "複数"
+};
+
+function getMorphLabel(morph) {
+  const parts = [];
+  
+  if (morph.tense) {
+    const t = TENSE_LABEL[morph.tense];
+    if (t) parts.push(t);
   }
-
-  // ★ 有限動詞（100%確定）
-  if (code.length === 5 && "123".includes(code[3])) {
-    return {
-      type: "finite",
-      tense: code[0],
-      voice: code[1],
-      mood: code[2],
-      person: code[3],
-      number: code[4]
-    };
+  
+  if (morph.voice) {
+    const v = VOICE_LABEL[morph.voice];
+    if (v) parts.push(v);
   }
-
-  // ★ 不定詞など
-  return {
-    type: "other",
-    tense: code[0],
-    voice: code[1],
-    mood: code[2]
-  };
+  
+  if (morph.mood) {
+    const m = MOOD_LABEL[morph.mood];
+    if (m) parts.push(m);
+  }
+  
+  if (morph.person) {
+    const p = PERSON_LABEL[morph.person];
+    if (p) parts.push(p);
+  }
+  
+  if (morph.number) {
+    const n = NUMBER_LABEL[morph.number];
+    if (n) parts.push(n);
+  }
+  
+  return parts.join("/");
 }
-  
-const TENSE_LABEL = { P:"現在", I:"未完了", F:"未来", A:"アオリスト", R:"完了", L:"過去完了", X:"不明瞭" };
-const VOICE_LABEL = { A:"能動", M:"中動", P:"受動" };
-const MOOD_LABEL  = { I:"直説法", S:"接続法", O:"希求法", M:"命令法", N:"不定詞", P:"分詞" };
-const PERSON_LABEL = { "1":"1人称", "2":"2人称", "3":"3人称" };
-const NUMBER_LABEL = { S:"単数", P:"複数" };
-const CASE_LABEL = { N:"主格", G:"属格", D:"与格", A:"対格", V:"呼格" };
-const GENDER_LABEL = { M:"男性", F:"女性", N:"中性" };
-  
+
 function decorate(word, entries) {
-
   if (!entries || entries.length === 0) {
     return `<span>${word}</span>`;
   }
 
-  // ★ 重複排除（順序維持）
+  // 重複排除
   const seen = new Set();
   const unique = [];
 
   entries.forEach(e => {
-    const m = parseMorph(e.morph);
-
-    const label = [
-      TENSE_LABEL[m.tense],
-      VOICE_LABEL[m.voice],
-      MOOD_LABEL[m.mood],
-      PERSON_LABEL[m.person],
-      NUMBER_LABEL[m.number],
-      CASE_LABEL[m.case],
-      GENDER_LABEL[m.gender]
-    ].filter(Boolean).join("/");
-
+    const label = getMorphLabel(e.morph);
     if (!seen.has(label)) {
       seen.add(label);
-      unique.push({ label, morph: m });
+      unique.push({ label, entry: e });
     }
   });
 
-  // ★ 表示用
+  // ツールチップ用テキスト
   const info = unique.map(u => u.label).join(" | ");
 
-  // ★ 優先順位（ここがミソ）
+  // 優先順位で主要な形態素を選択
   const priority = ["indicative", "imperative", "participle", "infinitive"];
   let main = unique[0];
 
   for (const p of priority) {
-    const found = unique.find(u => {
-      const mood = MOOD_LABEL[u.morph.mood];
-      if (p === "indicative" && mood === "直説法") return true;
-      if (p === "imperative" && mood === "命令法") return true;
-      if (p === "participle" && mood === "分詞") return true;
-      if (p === "infinitive" && mood === "不定詞") return true;
-      return false;
-    });
+    const found = unique.find(u => u.entry.morph.mood === p);
     if (found) {
       main = found;
       break;
     }
   }
 
-  const m = main.morph;
+  const m = main.entry.morph;
 
-  // ★ クラス決定
+  // クラス決定（時制）
   let tenseClass = "";
-  if (m.tense === 'P') tenseClass = "present";
-  if (m.tense === 'I') tenseClass = "imperfect";
-  if (m.tense === 'F') tenseClass = "future";
-  if (m.tense === 'A') tenseClass = "aorist";
-  if (m.tense === 'R') tenseClass = "perfect";
-  if (m.tense === 'L') tenseClass = "pluperfect";
+  if (m.tense === "present") tenseClass = "present";
+  else if (m.tense === "imperfect") tenseClass = "imperfect";
+  else if (m.tense === "future") tenseClass = "future";
+  else if (m.tense === "aorist") tenseClass = "aorist";
+  else if (m.tense === "perfect") tenseClass = "perfect";
+  else if (m.tense === "pluperfect") tenseClass = "pluperfect";
 
+  // クラス決定（態）
   let voiceClass = "";
-  if (m.voice === 'M') voiceClass = "middle";
-  if (m.voice === 'P') voiceClass = "passive";
+  if (m.voice === "middle") voiceClass = "middle";
+  else if (m.voice === "passive") voiceClass = "passive";
 
+  // クラス決定（法）
   let moodClass = "";
-  if (m.mood === 'I') moodClass = "indicative";
-  if (m.mood === 'S') moodClass = "subjunctive";
-  if (m.mood === 'O') moodClass = "optative";
-  if (m.mood === 'M') moodClass = "imperative";
-  if (m.mood === 'N') moodClass = "infinitive";
-  if (m.mood === 'P') moodClass = "participle";
+  if (m.mood === "indicative") moodClass = "indicative";
+  else if (m.mood === "subjunctive") moodClass = "subjunctive";
+  else if (m.mood === "optative") moodClass = "optative";
+  else if (m.mood === "imperative") moodClass = "imperative";
+  else if (m.mood === "infinitive") moodClass = "infinitive";
+  else if (m.mood === "participle") moodClass = "participle";
 
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass]
     .filter(Boolean)
@@ -357,21 +375,25 @@ function decorate(word, entries) {
 
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
-  
+
 function analyze() {
   const input = document.getElementById("input").value.trim();
   if (!input) return;
-  const words = input.split(/[\s.,;:()]+/);
+  
+  const words = input.split(/[\s.,;:()]+/).filter(w => w);
   let output = "";
+  
   words.forEach(word => {
     const key = normalizeGreek(word);
     const candidates = morphMap.get(key) || [];
+    
     if (candidates.length > 0) {
       output += decorate(word, candidates) + " ";
     } else {
       output += `<span>${word}</span> `;
     }
   });
+  
   document.getElementById("output").innerHTML = output.trim();
   document.getElementById("outputCard").style.display = "block";
 }
