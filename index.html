@@ -279,6 +279,10 @@ const GENDER_LABEL = { M:"男性", F:"女性", N:"中性" };
   
 function decorate(word, entries) {
 
+  console.log("WORD:", word);
+  console.log("ENTRIES:", entries);
+  console.log("MORPHS:", entries.map(e => e.morph));
+
   const info = entries.map(e => {
     const m = parseMorph(e.morph);
 
