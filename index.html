@@ -279,8 +279,9 @@ function decorate(word, entries) {
     const tl = TENSE_LABEL[morph.tense] || morph.tense;
     const vl = VOICE_LABEL[morph.voice] || morph.voice;
     const ml = MOOD_LABEL[morph.mood]  || morph.mood;
-    return `${tl}/${vl}/${ml}`;
-  }).join(" · ");
+    const pl = PERSON_LABEL[morph.person] || "";
+    const nl = NUMBER_LABEL[morph.number] || "";
+    return [tl, vl, ml, pl, nl].filter(Boolean).join("/");
 
   // 最初のエントリのクラスで装飾
   const morph = parseMorph(entries[0].morph);
