@@ -238,14 +238,13 @@ fetch("morphgnt.json")
     document.getElementById("status").textContent = "morphgnt.json が見つかりません";
   });
 
-function normalizeGreek(text) {
-  return text
-    .toLowerCase()
+  function normalizeGreek(text) {
+  return text.toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[⸂⸃⸀⸁⸄⸅⸆⸇⸈⸉⸊⸋⸌⸍⸎⸏]/g, "") // ←追加（全部の囲み記号）
-    .replace(/[·.,;:····]/g, "")
-    .trim();
+    .replace(/[⸂⸃]/g, "")
+    .replace(/ς/g, "σ");
+}
 }
   
 const TENSE_LABEL = {
@@ -389,6 +388,11 @@ function analyze() {
   
   words.forEach(word => {
     const key = normalizeGreek(word);
+    
+    console.log("INPUT:", word);
+    console.log("KEY:", key);
+    console.log("MAP HIT:", morphMap.get(key));
+    
     const candidates = morphMap.get(key) || [];
     
     if (candidates.length > 0) {
