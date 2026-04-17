@@ -235,7 +235,8 @@ function normalizeGreek(text) {
 function parseMorph(code) {
   if (!code) return {};
 
-  // ★ 分詞を最優先
+  // ★ 分詞（確実判定）
+  // 例：PAPDSF
   if (code.length === 6 && code[2] === "P") {
     return {
       tense: code[0],
@@ -247,8 +248,9 @@ function parseMorph(code) {
     };
   }
 
-  // ★ 有限動詞（人称あり）
-  if (code.length >= 5 && /[123]/.test(code[3])) {
+  // ★ 有限動詞（4文字目が数字）
+  // 例：PAI2P
+  if (code.length >= 5 && /^[123]$/.test(code[3])) {
     return {
       tense: code[0],
       voice: code[1],
@@ -258,7 +260,7 @@ function parseMorph(code) {
     };
   }
 
-  // 不定詞など
+  // ★ 不定詞など（PINなど）
   return {
     tense: code[0],
     voice: code[1],
@@ -282,10 +284,15 @@ function decorate(word, entries) {
       TENSE_LABEL[m.tense],
       VOICE_LABEL[m.voice],
       MOOD_LABEL[m.mood],
-      PERSON_LABEL[m.person],
+    
+      // ★ 有限動詞だけ人称を出す
+      m.person ? PERSON_LABEL[m.person] : null,
+    
       NUMBER_LABEL[m.number],
-      CASE_LABEL[m.case],
-      GENDER_LABEL[m.gender]
+    
+      // ★ 分詞だけ格・性を出す
+      m.case ? CASE_LABEL[m.case] : null,
+      m.gender ? GENDER_LABEL[m.gender] : null
     ];
 
     return parts.filter(Boolean).join("/");
