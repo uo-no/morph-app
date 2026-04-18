@@ -373,6 +373,8 @@ function analyze() {
     const key = normalizeGreek(token);
     console.log("INPUT:", token, "  KEY:", key, "  HIT:", morphMap.has(key));
     const candidates = morphMap.get(key) || [];
+    console.log("morph entries:", JSON.stringify(candidates.map(e => e.morph))); // ← ここ
+
     output += decorate(token, candidates) + " ";
   });
 
