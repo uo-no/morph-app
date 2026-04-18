@@ -357,7 +357,9 @@ function decorate(word, entries) {
 
   const classes = ["verb-hit", tenseClass, voiceClass, moodClass]
     .filter(Boolean).join(" ");
-
+  
+  console.log("word:", word, "  classes:", classes, "  morph:", JSON.stringify(m)); // ← ここ
+  
   return `<span class="${classes}" data-info="${info}">${word}</span>`;
 }
 
